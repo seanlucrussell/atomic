@@ -9,7 +9,7 @@ import Control.Carrier.Lift (LiftC, runM)
 import Control.Carrier.State.Strict (State, StateC, get, put, runState)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Core (Core (..), ValueDB, displayCore)
-import Data.ByteString (intercalate)
+import Data.List (intercalate)
 import Data.Map (empty)
 import Data.Set (toList)
 import Database (displayMainDB, readMainDB, writeMainDB)
@@ -38,7 +38,7 @@ runCommand :: Command -> IO ()
 runCommand (Compile filename) = mainHandler (putStrLn . displayCore . snd) (compileFile filename)
 runCommand (Exec filename) = mainHandler (writeMainDB . fst) (execFile filename)
 runCommand DumpDB = displayMainDB
-runCommand (Dependencies filename) = mainHandler (putStrLn . unwords . fmap (displayCore . GlobalRef) . toList . snd) (compileFile filename >>= dependencies)
+runCommand (Dependencies filename) = mainHandler (putStrLn . intercalate "\n" . fmap (displayCore . GlobalRef) . toList . snd) (compileFile filename >>= dependencies)
 
 main :: IO ()
 main = execParser opts >>= runCommand
