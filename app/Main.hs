@@ -8,14 +8,17 @@ import Control.Carrier.Fail.Either (Fail, FailC, runFail)
 import Control.Carrier.Lift (LiftC, runM)
 import Control.Carrier.State.Strict (State, StateC, get, put, runState)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Core (Core (..), ValueDB, displayCore, displayProgram)
+import Core (Core (..), ValueDB, displayCore)
+import Data.ByteString (intercalate)
 import Data.Map (empty)
+import Data.Set (toList)
+import Database (displayMainDB, readMainDB, writeMainDB)
+import Dependencies
 import Exec (exec)
 import Options.Applicative
 import Parser (parseProgram)
-import Text.Read (readMaybe)
 
-data Command = Compile String | Exec String | DumpDB
+data Command = Compile String | Exec String | DumpDB | Dependencies String
 
 parseCommand :: Parser Command
 parseCommand =
@@ -23,16 +26,19 @@ parseCommand =
     ( command "compile" (info compileOptions (progDesc "Compile a file"))
         <> command "exec" (info execOptions (progDesc "Execute a file"))
         <> command "dumpdb" (info dumpDBOptions (progDesc "Dump the database"))
+        <> command "dependencies" (info dependenciesOptions (progDesc "List dependencies for a file"))
     )
   where
     compileOptions = Compile <$> argument str (metavar "FILENAME" <> help "File to compile")
     execOptions = Exec <$> argument str (metavar "FILENAME" <> help "File to execute")
     dumpDBOptions = pure DumpDB
+    dependenciesOptions = Dependencies <$> argument str (metavar "FILENAME" <> help "File to list dependencies for")
 
 runCommand :: Command -> IO ()
 runCommand (Compile filename) = mainHandler (putStrLn . displayCore . snd) (compileFile filename)
 runCommand (Exec filename) = mainHandler (writeMainDB . fst) (execFile filename)
 runCommand DumpDB = displayMainDB
+runCommand (Dependencies filename) = mainHandler (putStrLn . unwords . fmap (displayCore . GlobalRef) . toList . snd) (compileFile filename >>= dependencies)
 
 main :: IO ()
 main = execParser opts >>= runCommand
@@ -67,39 +73,3 @@ runner = runM . runFail . runState Data.Map.empty
 
 mainHandler :: ((ValueDB, a) -> IO ()) -> StateC ValueDB (FailC (LiftC IO)) a -> IO ()
 mainHandler onSuccess system = runner (withMainDB >> system) >>= either putStrLn onSuccess
-
--- other useful operations
-
-writeToFile :: Show a => FilePath -> a -> IO ()
-writeToFile path = writeFile path . show
-
-readFromFile :: Read a => FilePath -> IO (Maybe a)
-readFromFile path = readMaybe <$> readFile path
-
-mainDBLocation :: FilePath
-mainDBLocation = "artifacts"
-
-readMainDB :: IO (Maybe ValueDB)
-readMainDB = readFromFile mainDBLocation
-
-writeMainDB :: ValueDB -> IO ()
-writeMainDB = writeToFile mainDBLocation
-
-displayMainDB :: IO ()
-displayMainDB = readMainDB >>= putStrLn . maybe (error "no db") displayProgram
-
--- it would be nifty to display a dependency graph for our terms. that could be a killer feature here
-
--- one entry - we just eval a term
--- could be e.g. `atomic '#IMPORT "path/local-file.a"'
-
--- we gonna want to have multiple different value DB sources. need to spec a simple communication protcol.
--- thinking we could have a local caching server, remote servers (perhaps several), and other systems
-
--- a major challenge is the way we pair documentation to the ValueDB. how
--- are people supposed to discover relevant information? something we need to think about
-
--- also, next steps require us to be able to push and pull from a db
--- for now lets suppose that a db is append only. don't worry about space. all you can do is push
-
--- obvious important thing to do is find the transitive closure of dependencies for a core expression

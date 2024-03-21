@@ -133,3 +133,22 @@ So instead of writing your language and then realizing you need a way to distrib
 - [ ] Execute core
 - [ ] HTTP server to download core
 - [ ] Continuation-based IO system
+
+## MISC
+
+
+-- it would be nifty to display a dependency graph for our terms. that could be a killer feature here
+
+-- one entry - we just eval a term
+-- could be e.g. `atomic '#IMPORT "path/local-file.a"'
+
+-- we gonna want to have multiple different value DB sources. need to spec a simple communication protcol.
+-- thinking we could have a local caching server, remote servers (perhaps several), and other systems
+
+-- a major challenge is the way we pair documentation to the ValueDB. how
+-- are people supposed to discover relevant information? something we need to think about
+
+-- also, next steps require us to be able to push and pull from a db
+-- for now lets suppose that a db is append only. don't worry about space. all you can do is push
+
+-- obvious important thing to do is find the transitive closure of dependencies for a core expression
