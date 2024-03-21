@@ -1,0 +1,22 @@
+combinators = #IMPORT "atomic-stdlib/combinators.a"
+boolean = #IMPORT "atomic-stdlib/boolean.a"
+use everything from boolean
+use everything from combinators
+
+zero f x = x
+
+suc n f = compose f (n f)
+
+add m n f x = m f (n x)
+multiply m n f x = m (n f) x
+exp m n = n m
+pred n f x = n (\g h.h (g f)) (const x) id
+minus m n = (n pred) m
+
+iszero n = n (\x.false) true
+
+lessthanorequal m n = iszero (minus m n)
+
+equal m n = and (lessthanorequal m n) (lessthanorequal n m)
+
+reveal {zero,suc,add,multiply,exp,pred,minus,iszero,lessthanorequal,equal}

@@ -1,0 +1,12 @@
+-- use list,io from #IMPORT "atomic-stdlib/stdlib.a"
+stdlib = <fa9ddfb638603be8>
+
+use list,io from stdlib
+use putStrLn,getStrLn from io
+use reverse from list
+
+reveal
+  putStrLn "Reverse this string:"
+ (getStrLn (\s.
+  putStrLn (reverse s)
+  EXIT))

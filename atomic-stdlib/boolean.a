@@ -1,0 +1,11 @@
+true a b = a
+false a b = b
+
+if x = x
+
+and a b = a b a
+or a b = a a b
+not p a b = p b a
+xor a b = a (not b) b
+
+reveal {true,false,if,and,or,not,xor}

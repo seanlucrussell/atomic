@@ -1,0 +1,23 @@
+let stdlib = <a42f5440eefe>
+
+let zero f x = x
+
+let suc n f x = f (n f x)
+
+let add m n f x = m f (n x)
+
+let one = suc zero
+let two = suc one
+let three = suc two
+
+let sampleMap = { zero : zero, suc : suc }:suc
+
+let t = stdlib.test.x
+
+let w = stdlib (suc zero)
+
+let io = syscall {type: stdlib.getChar, continue: \c.syscall {type: stdlib.putChar, value: c, continue: syscall {type: stdlib.exit}}}
+
+let forkingProcess = syscall {type: stdlib.fork, branchA: syscall {type: stdlib.putChar, value: zero}, branchB: syscall {type: stdlib.putChar, value: one}}
+
+let forkingProcessAlt = \s.syscall {type: s.fork, branchA: syscall {type: s.putChar, value: zero}, branchB: syscall {type: s.putChar, value: one}}

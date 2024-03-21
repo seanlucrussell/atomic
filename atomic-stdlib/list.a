@@ -1,0 +1,17 @@
+boolean = #IMPORT "atomic-stdlib/boolean.a"
+combinators = #IMPORT "atomic-stdlib/combinators.a"
+use true,false from boolean
+
+nil c n = n
+cons h t c n = c h (t c n)
+
+isnil l = l (\h t.false) true
+head l = l true false
+tail l c n = l (\h t g.g h (t c)) (combinators.const n) false
+
+singleton v = cons v nil
+append v l = l cons (singleton v)
+
+reverse l = l (\x f xs.f (cons x xs)) (\x.x) nil
+
+reveal {nil, cons, isnil, head, tail, singleton, append, reverse}

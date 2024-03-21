@@ -1,0 +1,3 @@
+pair x y z = z x y
+first p = p (\x y.x)
+second p = p (\x y.y)

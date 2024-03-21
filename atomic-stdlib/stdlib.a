@@ -1,0 +1,7 @@
+bool = #IMPORT "atomic-stdlib/boolean.a"
+nat = #IMPORT "atomic-stdlib/nat.a"
+list = #IMPORT "atomic-stdlib/list.a"
+combinators = #IMPORT "atomic-stdlib/combinators.a"
+io = #IMPORT "atomic-stdlib/io.a"
+
+reveal {bool,nat,list,combinators,io}
