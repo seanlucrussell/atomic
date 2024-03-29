@@ -109,7 +109,7 @@ strParser :: Parser Term
 strParser = StringLiteral <$> between (char '"') (char '"') (many (noneOf "\""))
 
 lambdaParser :: Parser Term
-lambdaParser = strSymbol "\\" *> liftA2 manyLambdas (sepBy1 name lineSpacing) (strSymbol "." *> termParser)
+lambdaParser = (strSymbol "\\" <|> strSymbol "λ") *> liftA2 manyLambdas (sepEndBy1 name lineSpacing) (strSymbol "." *> termParser)
 
 manyLambdas :: [Name] -> Term -> Term
 manyLambdas s t = foldr Lambda t s
@@ -225,7 +225,7 @@ endOfLineParser = lineSpacing >> commentParser
 data Instruction = UseFrom [Name] Term Instruction | Assign Name Term Instruction | Reveal Term deriving (Show)
 
 lineParser :: Parser Instruction
-lineParser = try assignmentParser <|> useFromParser <|> revealParser
+lineParser = try assignmentParser <|> try useFromParser <|> try revealParser
 
 parseProgram :: (Has Fail sig m, MonadFail m) => FilePath -> String -> m Instruction
 parseProgram = atomParse (skipMany (endOfLineParser >> newline) >> lineParser)
