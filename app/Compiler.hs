@@ -14,7 +14,7 @@ import Data.List (elemIndex)
 import qualified Data.Map
 import Data.Map.Strict (Map)
 import Data.Maybe (fromMaybe)
-import Eval (eval)
+import Eval (evalNormalOrder)
 import Exec (exec)
 import qualified GHC.Generics
 import qualified Parser as P
@@ -49,9 +49,9 @@ compileTerm g e t = case t of
   P.NatLiteral n -> pure (embed n)
   P.Import path -> do
     compiledPath <- comp e path
-    evaluatedPath <- eval compiledPath
+    evaluatedPath <- evalNormalOrder compiledPath
     case extract evaluatedPath of
-      Nothing -> fail ("expecting file path for import, instead got " ++ show path)
+      Nothing -> fail ("expecting file path for import, instead got\n" ++ displayCore evaluatedPath)
       Just s -> GlobalRef <$> compileFile s
   where
     comp = compileTerm g
@@ -96,7 +96,7 @@ stateCompile g (P.Assign name currentLine remainingLines) = do
   stateCompile (Data.Map.insert name (GlobalRef hashedVal) g) remainingLines
 stateCompile g (P.UseFrom names term remainingInstructions) = do
   compiledTerm <- compileTerm g [] term
-  evaluatedTerm <- eval compiledTerm
+  evaluatedTerm <- evalNormalOrder compiledTerm
   case extract evaluatedTerm :: Maybe (Map String Core) of
     Nothing -> fail ("expecting record in use-from, instead got " ++ displayCore evaluatedTerm)
     Just a ->

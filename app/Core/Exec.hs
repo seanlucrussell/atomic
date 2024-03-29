@@ -12,16 +12,17 @@ import Core
     ValueDB,
     displayCore,
   )
-import Eval (eval)
+import Eval (evalLazy, evalNormalOrder)
 
 exec :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m, MonadIO m) => Core -> m Core
 exec c = do
-  evaluated <- eval c
+  evaluated <- evalLazy c
   case evaluated of
     (App GetChar cont) -> do
       char <- liftIO getChar
       exec (App cont (embed char))
     (App (App PutChar char) cont) -> do
-      maybe (fail ("Expecting char for put value, got " ++ displayCore char)) pure (extract char) >>= liftIO . putChar
+      charNorm <- evalNormalOrder char
+      maybe (fail ("Expecting char for put value, got " ++ displayCore charNorm)) pure (extract charNorm) >>= liftIO . putChar
       exec cont
-    t -> return t
+    t -> evalLazy t

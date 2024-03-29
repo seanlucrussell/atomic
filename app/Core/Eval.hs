@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Eval (eval) where
+module Eval (evalLazy, evalNormalOrder) where
 
 import Control.Algebra (Has)
 import Control.Effect.Fail (Fail, fail)
@@ -12,38 +12,66 @@ import Data.Map (lookup)
 
 type LocalContext = [Core]
 
-sub :: Core -> Data.Binary.Word16 -> Core -> Core
-sub replacement depth t = case t of
-  LocalRef index -> if depth == index then replacement else LocalRef index
-  Lambda body -> Lambda (sub replacement (depth + 1) body)
-  App f x -> App (sub replacement depth f) (sub replacement depth x)
-  Record r -> Record $ fmap (sub replacement depth) r
-  RecordAccess record field -> RecordAccess (sub replacement depth record) field
-  t -> t
-
-reduce :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m) => LocalContext -> Core -> m Core
-reduce localCtx (LocalRef index) =
-  case drop (fromIntegral index) localCtx of
-    (v : _) -> pure v
-    [] -> fail "Local reference out of bounds"
-reduce l (GlobalRef index) = do
-  globalCtx <- get
-  maybe (fail "Global reference not found") (reduce l) (Data.Map.lookup index globalCtx)
-reduce localCtx (Lambda body) = pure (Lambda body)
-reduce localCtx (App func arg) = do
-  evaluatedFunction <- reduce localCtx func
+evalLazy :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m) => Core -> m Core
+evalLazy (GlobalRef index) = get >>= (maybe (fail "Global reference not found") evalLazy . Data.Map.lookup index)
+evalLazy (App func arg) = do
+  evaluatedFunction <- evalLazy func
   case evaluatedFunction of
-    (Lambda body) -> reduce (arg : localCtx) (sub arg 0 body)
-    t -> App t <$> reduce localCtx arg
-reduce localCtx (RecordAccess baseRecord fieldName) = do
-  evalResult <- reduce localCtx baseRecord
-  case evalResult of
-    Record r -> maybe (fail "field missing") (reduce localCtx) (Data.Map.lookup fieldName r)
-    _ -> fail "Record access on non-record"
-reduce localCtx (Record r) = pure (Record r)
-reduce _ Exit = pure Exit
-reduce _ GetChar = pure GetChar
-reduce _ PutChar = pure PutChar
+    (Lambda body) -> evalLazy (open body arg)
+    t -> App t <$> evalLazy arg
+evalLazy (RecordAccess baseRecord fieldName) = do
+  Record r <- evalLazy baseRecord
+  maybe (fail "field missing") evalLazy (Data.Map.lookup fieldName r)
+evalLazy t = pure t
 
-eval :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m) => Core -> m Core
-eval = reduce []
+applyToFree :: (Data.Binary.Word16 -> Data.Binary.Word16) -> Core -> Core
+applyToFree f = go 0
+  where
+    go depth (LocalRef i) = LocalRef (if i < depth then i else f i)
+    go depth (Lambda t) = Lambda (go (depth + 1) t)
+    go depth (App t1 t2) = App (go depth t1) (go depth t2)
+    go depth (Record r) = Record (fmap (go depth) r)
+    go depth (RecordAccess record field) = RecordAccess (go depth record) field
+    go _ t = t
+
+open :: Core -> Core -> Core
+open a b = go 0 a
+  where
+    go d (LocalRef i)
+      | i < d = LocalRef i -- bound variable, do not touch
+      | i == d = applyToFree (+ d) b -- we are substituting this variable
+      | i > d = LocalRef (i - 1) -- decrementing free vars since we are opening the lambda here
+    go d (Lambda t) = Lambda (go (d + 1) t)
+    go d (App t1 t2) = App (go d t1) (go d t2)
+    go depth (Record r) = Record (fmap (go depth) r)
+    go depth (RecordAccess record field) = RecordAccess (go depth record) field
+    go _ t = t
+
+normalOrderStep :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m) => Core -> m (Maybe Core)
+normalOrderStep (GlobalRef index) = get >>= (maybe (fail "Global reference not found") (pure . Just) . Data.Map.lookup index)
+normalOrderStep (App (Lambda body) arg) = pure (Just (open body arg))
+normalOrderStep (App func arg) = do
+  evaluatedFunction <- normalOrderStep func
+  case evaluatedFunction of
+    Just newFunction -> pure (Just (App newFunction arg))
+    Nothing -> do
+      evaluatedArg <- normalOrderStep arg
+      case evaluatedArg of
+        Nothing -> pure Nothing
+        Just newArg -> pure (Just (App func newArg))
+normalOrderStep (RecordAccess baseRecord fieldName) = do
+  Just (Record r) <- normalOrderStep baseRecord
+  maybe (fail "field missing") (pure . Just) (Data.Map.lookup fieldName r)
+normalOrderStep (Lambda body) = do
+  reducedBody <- normalOrderStep body
+  case reducedBody of
+    Just newBody -> pure (Just (Lambda newBody))
+    Nothing -> pure Nothing
+normalOrderStep t = pure Nothing
+
+evalNormalOrder :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m) => Core -> m Core
+evalNormalOrder term = do
+  step <- normalOrderStep term
+  case step of
+    Just newTerm -> evalNormalOrder newTerm
+    Nothing -> pure term

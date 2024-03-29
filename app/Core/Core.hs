@@ -4,6 +4,7 @@
 
 module Core where
 
+import Control.Applicative (liftA2)
 import qualified Control.Monad as Data.Map
 import qualified Data.Binary
 import Data.ByteString.Lazy (unpack)
@@ -105,11 +106,15 @@ instance RepresentableInCore a => RepresentableInCore [a] where
   embed :: RepresentableInCore a => [a] -> Core
   embed = foldr (\h t -> Lambda (Lambda (1 ... embed h ... (t ... 1 ... 0)))) (Lambda (Lambda 0))
   extract :: RepresentableInCore a => Core -> Maybe [a]
-  extract (Lambda (Lambda (App (App 1 h) (App (App t 1) 0)))) = do
-    h' <- extract h
-    t' <- extract t
-    pure (h' : t')
-  extract (Lambda (Lambda 0)) = Just []
+  extract (Lambda (Lambda b)) = extractListBody b
+    where
+      extractListBody (App (App 1 h) t) = liftA2 (:) (extract h) (extractListBody t)
+      -- extractListBody (App (App 1 h) t) = do
+      --   h' <- extract h
+      --   t' <- extractListBody t
+      --   pure (h' : t')
+      extractListBody 0 = Just []
+      extractListBody _ = Nothing
   extract _ = Nothing
 
 instance RepresentableInCore Core where
