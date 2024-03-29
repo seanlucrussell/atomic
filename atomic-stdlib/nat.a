@@ -1,22 +1,53 @@
 combinators = #IMPORT "atomic-stdlib/combinators.a"
 boolean = #IMPORT "atomic-stdlib/boolean.a"
 use everything from boolean
-use everything from combinators
+use const,id from combinators
 
 zero f x = x
 
-suc n f = compose f (n f)
+suc n f x = f (n f x)
 
-add m n f x = m f (n x)
+add m n f x = m f (n f x)
 multiply m n f x = m (n f) x
 exp m n = n m
-pred n f x = n (\g h.h (g f)) (const x) id
+pred n f x = n (\g h.h (g f)) (\u.x) (\u.u)
 minus m n = (n pred) m
 
 iszero n = n (\x.false) true
 
+repeat n x f = n (λt.t x) f
+lastOf n = n true id id
+
+floor m frac f x = repeat m x (frac f (lastOf m))
+frac n m f = n (m (λt nt v.t (λa.nt a v)) id (λa b.b (f a)))
+
+div n m = floor m (frac n m)
+
+divide = div
+
+
+dividePrecursor c n m f x = (\d.iszero d x (f (c d m f x))) (minus n m)
+-- divide n = y dividePrecursor (suc n)
+
 lessthanorequal m n = iszero (minus m n)
+
+
+z f = (\u.f(\z.u u z)) (\u.f(\z.u u z))
+rem = z (\f n d.(lessthanorequal d n)(\x.f(minus n d) d x) n)
 
 equal m n = and (lessthanorequal m n) (lessthanorequal n m)
 
-reveal {zero,suc,add,multiply,exp,pred,minus,iszero,lessthanorequal,equal}
+reveal {
+    zero,
+    rem,
+    suc,
+    add,
+    multiply,
+    exp,
+    pred,
+    minus,
+    iszero,
+    lessthanorequal,
+    equal,
+    divide
+    }
