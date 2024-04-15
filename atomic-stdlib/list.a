@@ -12,6 +12,8 @@ tail l c n = l (\h t g.g h (t c)) (combinators.const n) false
 singleton v = cons v nil
 append v l = l cons (singleton v)
 
+map f l = l (\h t.cons (f h) t) nil
+
 reverse l = l (\x f xs.f (cons x xs)) (\x.x) nil
 
-reveal {nil, cons, isnil, head, tail, singleton, append, reverse}
+reveal {map, nil, cons, isnil, head, tail, singleton, append, reverse}

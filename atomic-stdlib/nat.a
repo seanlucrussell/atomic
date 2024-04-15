@@ -1,7 +1,7 @@
 combinators = #IMPORT "atomic-stdlib/combinators.a"
 boolean = #IMPORT "atomic-stdlib/boolean.a"
 use everything from boolean
-use const,id from combinators
+use everything from combinators
 
 zero f x = x
 
@@ -15,25 +15,19 @@ minus m n = (n pred) m
 
 iszero n = n (\x.false) true
 
+-- see https://gist.github.com/viclib/cd96edb1a8517480b5d7 for explanation
+-- of division system
 repeat n x f = n (λt.t x) f
 lastOf n = n true id id
 
 floor m frac f x = repeat m x (frac f (lastOf m))
 frac n m f = n (m (λt nt v.t (λa.nt a v)) id (λa b.b (f a)))
 
-div n m = floor m (frac n m)
-
-divide = div
-
-
-dividePrecursor c n m f x = (\d.iszero d x (f (c d m f x))) (minus n m)
--- divide n = y dividePrecursor (suc n)
+divide n m = floor m (frac n m)
 
 lessthanorequal m n = iszero (minus m n)
 
-
-z f = (\u.f(\z.u u z)) (\u.f(\z.u u z))
-rem = z (\f n d.(lessthanorequal d n)(\x.f(minus n d) d x) n)
+rem = y (\f n d.(lessthanorequal d n) (\x.f(minus n d) d x) n)
 
 equal m n = and (lessthanorequal m n) (lessthanorequal n m)
 
