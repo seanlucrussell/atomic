@@ -1,20 +1,35 @@
+stdlib = #IMPORT "atomic-stdlib/stdlib.a"
 use everything from #IMPORT "atomic-stdlib/stdlib.a"
 
 use everything from nat
-use cons,nil,reverse from list
+use everything from list
 use putStrLn from io
-use y from combinators
+use if from bool
 
-asciiDigitOffset = '0'
-
-tallies n = n (\l.cons 'I' l) (cons '.' nil)
-putInt n = putStrLn (tallies n)
-
-natToStringPrecursor rec n = cons (add asciiDigitOffset (rem n 10)) ((lessthanorequal 9 n) (rec (divide n 10)) nil)
-natToString n = reverse (y natToStringPrecursor n)
-
-fib = y \rec n.lessthanorequal n 1 1 (add (rec (minus n 1)) (rec (minus n 2)))
+recursive = combinators.y
 
 range n m = m (\t x.cons x (t (suc x))) (\x.nil) n
 
-reveal (range 0 10) (\h t.putStrLn (natToString (fib h)) t) EXIT
+asciiDigitOffset = '0'
+
+natToString = recursive
+  \recurse n.
+    append
+      (add asciiDigitOffset (rem n 10))
+      (if
+        (lessthanorequal 9 n)
+        (recurse (divide n 10))
+        nil)
+
+fibonacci = recursive
+  \recurse n.
+    if
+      (lessthanorequal n 1)
+      1
+      (add
+        (recurse (minus n 1))
+        (recurse (minus n 2)))
+
+fibbonacciList = map fibonacci (range 0 8) 
+
+reveal fibbonacciList (\h t.putStrLn (natToString h) t) EXIT
