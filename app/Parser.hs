@@ -146,7 +146,7 @@ baseTokens =
 appParser :: Parser Term
 appParser = do
   fn : args <-
-    sepBy1
+    sepEndBy1
       ( tryAll
           [ lambdaParser,
             mapAccessParser,
