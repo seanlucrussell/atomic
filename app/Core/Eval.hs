@@ -6,7 +6,7 @@ module Eval (evalLazy, evalNormalOrder) where
 import Control.Algebra (Has)
 import Control.Effect.Fail (Fail, fail)
 import Control.Effect.State (State, get)
-import Core (Core (..), ValueDB)
+import Core (Core (..), ValueDB, displayCore)
 import qualified Data.Binary
 import Data.Map (lookup)
 
@@ -20,8 +20,8 @@ evalLazy (App func arg) = do
     (Lambda body) -> evalLazy (open body arg)
     t -> App t <$> evalLazy arg
 evalLazy (RecordAccess baseRecord fieldName) = do
-  Record r <- evalLazy baseRecord
-  maybe (fail "field missing") evalLazy (Data.Map.lookup fieldName r)
+  Record r <- evalNormalOrder baseRecord
+  maybe (fail ("field " ++ fieldName ++ " missing from " ++ displayCore baseRecord)) evalLazy (Data.Map.lookup fieldName r)
 evalLazy t = pure t
 
 applyToFree :: (Data.Binary.Word16 -> Data.Binary.Word16) -> Core -> Core
@@ -54,24 +54,14 @@ normalOrderStep (App func arg) = do
   evaluatedFunction <- normalOrderStep func
   case evaluatedFunction of
     Just newFunction -> pure (Just (App newFunction arg))
-    Nothing -> do
-      evaluatedArg <- normalOrderStep arg
-      case evaluatedArg of
-        Nothing -> pure Nothing
-        Just newArg -> pure (Just (App func newArg))
+    Nothing -> fmap (App func) <$> normalOrderStep arg
 normalOrderStep (RecordAccess baseRecord fieldName) = do
-  Just (Record r) <- normalOrderStep baseRecord
-  maybe (fail "field missing") (pure . Just) (Data.Map.lookup fieldName r)
-normalOrderStep (Lambda body) = do
-  reducedBody <- normalOrderStep body
-  case reducedBody of
-    Just newBody -> pure (Just (Lambda newBody))
-    Nothing -> pure Nothing
+  (Record r) <- evalNormalOrder baseRecord
+  maybe (fail ("field " ++ fieldName ++ " missing from " ++ displayCore baseRecord)) (pure . Just) (Data.Map.lookup fieldName r)
+normalOrderStep (Lambda body) = fmap (fmap Lambda) (normalOrderStep body)
 normalOrderStep t = pure Nothing
 
 evalNormalOrder :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m) => Core -> m Core
 evalNormalOrder term = do
   step <- normalOrderStep term
-  case step of
-    Just newTerm -> evalNormalOrder newTerm
-    Nothing -> pure term
+  maybe (pure term) evalNormalOrder step
