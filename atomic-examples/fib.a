@@ -1,5 +1,5 @@
-stdlib = #IMPORT "atomic-stdlib/stdlib.a"
-use everything from #IMPORT "atomic-stdlib/stdlib.a"
+stdlib = @IMPORT "atomic-stdlib/stdlib.a"
+use everything from @IMPORT "atomic-stdlib/stdlib.a"
 
 use everything from nat
 use everything from list

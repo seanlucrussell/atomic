@@ -1,7 +1,7 @@
-use if from #IMPORT "atomic-stdlib/boolean.a"
-use equal from #IMPORT "atomic-stdlib/nat.a"
-use y from #IMPORT "atomic-stdlib/combinators.a"
-use append from #IMPORT "atomic-stdlib/list.a"
+use if from @IMPORT "atomic-stdlib/boolean.a"
+use equal from @IMPORT "atomic-stdlib/nat.a"
+use y from @IMPORT "atomic-stdlib/combinators.a"
+use append from @IMPORT "atomic-stdlib/list.a"
 
 newline = 10
 

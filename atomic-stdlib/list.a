@@ -1,5 +1,5 @@
-boolean = #IMPORT "atomic-stdlib/boolean.a"
-combinators = #IMPORT "atomic-stdlib/combinators.a"
+boolean = @IMPORT "atomic-stdlib/boolean.a"
+combinators = @IMPORT "atomic-stdlib/combinators.a"
 use true,false from boolean
 
 nil c n = n

@@ -109,7 +109,7 @@ strParser :: Parser Term
 strParser = StringLiteral <$> between (char '"') (char '"') (many (noneOf "\""))
 
 lambdaParser :: Parser Term
-lambdaParser = (strSymbol "<" <|> strSymbol "λ") *> liftA2 manyLambdas (sepEndBy1 name lineSpacing) (strSymbol "|" *> termParser <* strSymbol ">")
+lambdaParser = strSymbol "<" *> liftA2 manyLambdas (sepEndBy1 name lineSpacing) (strSymbol "|" *> termParser <* strSymbol ">")
 
 manyLambdas :: [Name] -> Term -> Term
 manyLambdas s t = foldr Lambda t s
@@ -127,7 +127,7 @@ exit :: Parser Term
 exit = string "EXIT" >> return Exit
 
 importParser :: Parser Term
-importParser = string "#IMPORT" >> lineSpacing >> Import <$> termParser
+importParser = string "@IMPORT" >> lineSpacing >> Import <$> termParser
 
 baseTokens :: Parser Term
 baseTokens =

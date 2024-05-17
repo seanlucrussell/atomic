@@ -1,4 +1,4 @@
--- use list,io from #IMPORT "atomic-stdlib/stdlib.a"
+-- use list,io from @IMPORT "atomic-stdlib/stdlib.a"
 stdlib = <fa9ddfb638603be8>
 
 use list,io from stdlib
