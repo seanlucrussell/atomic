@@ -1,0 +1,164 @@
+use everything from #IMPORT "atomic-stdlib/stdlib.a"
+use everything from nat
+use everything from bool
+use everything from combinators
+use everything from list
+
+repeat n x f = n (λt.t x) f
+lastOf n = n true id id
+floor m fraction f x = repeat m x (fraction f (lastOf m))
+
+frac n m f = n (m (λt nt v.t (λa.nt a v)) id (λa b.b (f a)))
+
+div n m = floor m (frac n m)
+
+-- reveal \f g a b.(g(f(f(f a))) (f(f(f b))))
+
+-- reveal frac 3 4
+
+-- reveal PUTCHAR (lastof 3 'a' 'b' 'c') EXIT
+
+-- how can we implement floor such that it works on just a fraction? we shouldn't
+-- have to pass in the divisor.
+-- really we want g to give us the last item. f in the fraction should be f in the nat,
+-- and a,b,c,d... should all be x.
+-- one more constraint. since 0/1 is \f x.x, we need to have floor (\g y.y) f x = f x
+-- floor fraction f x = fraction f (\a b c.c) x x x
+
+
+floor fraction f x = fraction f (lastOf 3) x x x
+
+-- maybe g produces a callback. if you call it in a certain way you get the last element of the
+-- sequence so far, call it a different way and it just replaces the last element
+
+-- it wouldn't be pretty, but if we could extract the numerator and denominator we'd get a lot
+-- of power
+
+-- also we should think about ways to reduce the fraction to least common denominators
+
+
+g = y \rec stop x.if stop x rec
+
+--reveal \f a b c d.g true (f b)
+
+-- what should denom do if r = 0? because 0/n has many solutions?
+-- seems like it should probably yield 1.
+
+denom r = r (\x.1)
+
+-- reveal denom (frac 3 4) (\a b c.add (add a b) c)
+
+-- hmm what if we went for a similar but alternative representation? instead of g just
+-- being an accumulator, what if we made an explicit list? i.e. a rational number
+-- is just a bunch of cons cells?
+
+-- wat :: ((a -> b) -> c) -> (a -> d -> b) -> d -> c
+wat = λt nt v.t (λa.nt a v)
+-- wut :: (a -> b) -> a -> (b -> c) -> c
+wut f = \a b.b (f a)
+id = \x.x
+
+prefrac m f = (m wat id (wut f))
+frac n m f = n (m wat id (wut f))
+
+-- prefrac 1 = \f g x.g (f x)
+-- prefrac 2 = \f g a x.g (f x) a
+-- prefrac 3 = \f g a b x.g (f x) a b
+-- prefrac 4 = \f g a b c x.g (f x) a b c
+
+r = \f x.cons (f x) (cons (f x) (cons (f x) (cons x nil)))
+
+-- if we can crack the code to generate fracs as lists, rem should be super easy
+-- rem is:
+--   get last element of the list
+--   subtract it from every element in the list
+--   sum the list
+
+-- get last element of list
+-- apply function to element
+-- put element at start of list
+-- do this n times
+
+-- rotateLeft  l = foldr (\x acc switch -> if switch then acc False ++ [x] else [x] ++ acc False) (const []) l True
+-- rotateRight = reverse . rotateLeft . reverse
+-- rotateRight l = foldl (\acc x switch -> if switch then [x] ++ acc False else acc False ++ [x]) (const []) l True
+
+-- better rotate right
+-- given an argument, a list, and a switch, find the appropriate place for that argument
+-- also observe, rotate [] = id [], rotate [x] = id [x], rotate [a,b] = [b,a]. until the length of the input list
+-- is greater than three, rotate l = reverse l
+
+
+rotateLeft l = l (\x acc switch. switch (append x (acc false)) (cons x (acc false))) (const nil) true
+-- rotateLeft l = l (\x acc switch. switch append cons x (acc false)) (const nil) true
+
+-- ugly but it will do for now
+rotateRight l = reverse (rotateLeft (reverse l))
+
+foldr f z l = l f z
+
+
+-- this is surprising - both rotateRight and lastOr go slower when translating to a left fold
+-- than just reversing the list
+-- also default rem is even faster
+foldl f z l = foldr (\x g a. g (f a x)) (\x.x) l z
+rotateRight l = foldl (\acc x switch. switch (cons x (acc false)) (append x (acc false))) (const nil) l true
+rotateRight l = l (\f g h.g (\n.n (\x y.x f (h false x y)) (h false cons (\x.x f)))) id (\x y.id) true
+-- also also the div provided by the other person is faster than the list based variant. i wonder why
+
+
+range n m = m (\t x.cons x (t (suc x))) (\x.nil) n
+
+appLast f l = l (\x acc.cons ((isnil acc) (f x) x) acc) nil
+
+applyAndRotate f l = rotateRight (appLast f l)
+
+genZeros n = n (cons 0) nil
+
+frac n m = n (applyAndRotate suc) (genZeros m)
+
+firstOr l = l (\a b.a)
+-- ugly but it will do for now
+lastOr l = reverse l (\a b.a)
+-- lastOr l z = foldl (\a b.b) z l
+
+floor r = lastOr r 0
+ceil r = firstOr r 0
+
+div a b = floor (frac a b)
+
+sum l = l add 0
+
+remPre r = sum (map (\n.minus n (floor r)) r)
+
+rem n m = remPre (frac n m)
+
+-- reveal rem 13 10
+
+
+-- reveal div 12 4
+reveal rem 44 10
+
+
+-- reveal frac 2 3
+-- reveal (\f.3 (prefrac 4 f))
+
+-- reveal floor r
+
+
+-- reveal floor (frac 4 3)
+
+-- reveal frac 8 6
+
+-- reveal frac 4 3
+-- reveal \f g a b c d.g (f b) (f c) (f d) a -- this is frac 3 4
+-- reveal \f g a b c d.g (f a) (f b) (f c) (f d) -- this is frac 4 4
+-- reveal \f g a b c.g (f (f c)) (f a) (f b) -- this is frac 4 3
+
+-- this is all pretty weird because we are dealing with variadic arguments here
+
+-- \f g x.g (f (f (f (f x))))
+-- \f g h x. ((g (f (f (f h)))) (f (f (f x))))
+-- \f g x.g (f x): 1/1 is reverse composition?
+-- \f x.x: 0/1 is nat 0/false/whatever else. why does this seem to be the degenerate case for so many things?
+-- 3/3: \a b c d e f.((((b (a d)) (a e)) (a f)) c)
