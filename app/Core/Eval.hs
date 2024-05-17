@@ -62,6 +62,4 @@ normalOrderStep (Lambda body) = fmap (fmap Lambda) (normalOrderStep body)
 normalOrderStep t = pure Nothing
 
 evalNormalOrder :: (Has (State ValueDB) sig m, Has Fail sig m, MonadFail m) => Core -> m Core
-evalNormalOrder term = do
-  step <- normalOrderStep term
-  maybe (pure term) evalNormalOrder step
+evalNormalOrder term = normalOrderStep term >>= maybe (pure term) evalNormalOrder
