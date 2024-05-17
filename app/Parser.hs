@@ -162,7 +162,7 @@ refParser :: Parser Term
 refParser = Ref <$> name
 
 globalRefParser :: Parser Term
-globalRefParser = GlobalRef <$> (char '<' *> hexParser <* char '>')
+globalRefParser = GlobalRef <$> (char '&' *> hexParser)
 
 data MapEntry = MapEntry Name Term deriving (Show)
 

@@ -8,6 +8,9 @@ repeat n x f = n <t|t x> f
 lastOf n = n true id id
 floor m fraction f x = repeat m x (fraction f (lastOf m))
 
+{ record : value, other: value }
+{ record : <x|y> }
+
 frac n m f = n (m <t nt v|t <a|nt a v>> id <a b|b (f a)>)
 
 div n m = floor m (frac n m)
