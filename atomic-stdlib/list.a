@@ -5,15 +5,15 @@ use true,false from boolean
 nil c n = n
 cons h t c n = c h (t c n)
 
-isnil l = l (\h t.false) true
+isnil l = l <h t|false> true
 head l = l true false
-tail l c n = l (\h t g.g h (t c)) (combinators.const n) false
+tail l c n = l <h t g|g h (t c)> (combinators.const n) false
 
 singleton v = cons v nil
 append v l = l cons (singleton v)
 
-map f l = l (\h t.cons (f h) t) nil
+map f l = l <h t|cons (f h) t> nil
 
-reverse l = l (\x f xs.f (cons x xs)) (\x.x) nil
+reverse l = l <x f xs|f (cons x xs)> <x|x> nil
 
 reveal {map, nil, cons, isnil, head, tail, singleton, append, reverse}

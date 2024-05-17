@@ -1,5 +1,5 @@
-just x = \default f.f x
-nothing = \default f.default
+just x = <default f|f x>
+nothing = <default f|default>
 
 maybe default f m = m default f
 

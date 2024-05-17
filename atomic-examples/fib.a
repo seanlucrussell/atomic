@@ -8,28 +8,28 @@ use if from bool
 
 recursive = combinators.y
 
-range n m = m (\t x.cons x (t (suc x))) (\x.nil) n
+range n m = m <t x|cons x (t (suc x))> (\x.nil) n
 
 asciiDigitOffset = '0'
 
 natToString = recursive
-  \recurse n.
+  <recurse n|
     append
       (add asciiDigitOffset (rem n 10))
       (if
         (lessthanorequal 9 n)
         (recurse (divide n 10))
-        nil)
+        nil)>
 
 fibonacci = recursive
-  \recurse n.
+  <recurse n|
     if
       (lessthanorequal n 1)
       1
       (add
         (recurse (minus n 1))
-        (recurse (minus n 2)))
+        (recurse (minus n 2)))>
 
 fibbonacciList = map fibonacci (range 0 8) 
 
-reveal fibbonacciList (\h t.putStrLn (natToString h) t) EXIT
+reveal fibbonacciList <h t|putStrLn (natToString h) t> EXIT

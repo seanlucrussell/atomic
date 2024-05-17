@@ -16,8 +16,8 @@ let t = stdlib.test.x
 
 let w = stdlib (suc zero)
 
-let io = syscall {type: stdlib.getChar, continue: \c.syscall {type: stdlib.putChar, value: c, continue: syscall {type: stdlib.exit}}}
+let io = syscall {type: stdlib.getChar, continue: <c|syscall {type: stdlib.putChar, value: c, continue: syscall {type: stdlib.exit}}>}
 
 let forkingProcess = syscall {type: stdlib.fork, branchA: syscall {type: stdlib.putChar, value: zero}, branchB: syscall {type: stdlib.putChar, value: one}}
 
-let forkingProcessAlt = \s.syscall {type: s.fork, branchA: syscall {type: s.putChar, value: zero}, branchB: syscall {type: s.putChar, value: one}}
+let forkingProcessAlt = <s|syscall {type: s.fork, branchA: syscall {type: s.putChar, value: zero}, branchB: syscall {type: s.putChar, value: one}}>

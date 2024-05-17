@@ -4,11 +4,11 @@ use everything from bool
 use everything from combinators
 use everything from list
 
-repeat n x f = n (λt.t x) f
+repeat n x f = n <t|t x> f
 lastOf n = n true id id
 floor m fraction f x = repeat m x (fraction f (lastOf m))
 
-frac n m f = n (m (λt nt v.t (λa.nt a v)) id (λa b.b (f a)))
+frac n m f = n (m <t nt v|t <a|nt a v>> id <a b|b (f a)>)
 
 div n m = floor m (frac n m)
 
@@ -37,14 +37,14 @@ floor fraction f x = fraction f (lastOf 3) x x x
 -- also we should think about ways to reduce the fraction to least common denominators
 
 
-g = y \rec stop x.if stop x rec
+g = y <rec stop x|if stop x rec>
 
 --reveal \f a b c d.g true (f b)
 
 -- what should denom do if r = 0? because 0/n has many solutions?
 -- seems like it should probably yield 1.
 
-denom r = r (\x.1)
+denom r = r <x|1>
 
 -- reveal denom (frac 3 4) (\a b c.add (add a b) c)
 
@@ -53,10 +53,10 @@ denom r = r (\x.1)
 -- is just a bunch of cons cells?
 
 -- wat :: ((a -> b) -> c) -> (a -> d -> b) -> d -> c
-wat = λt nt v.t (λa.nt a v)
+wat = <t nt v|t <a|nt a v>>
 -- wut :: (a -> b) -> a -> (b -> c) -> c
-wut f = \a b.b (f a)
-id = \x.x
+wut f = <a b|b (f a)>
+id = <x|x>
 
 prefrac m f = (m wat id (wut f))
 frac n m f = n (m wat id (wut f))
@@ -66,7 +66,7 @@ frac n m f = n (m wat id (wut f))
 -- prefrac 3 = \f g a b x.g (f x) a b
 -- prefrac 4 = \f g a b c x.g (f x) a b c
 
-r = \f x.cons (f x) (cons (f x) (cons (f x) (cons x nil)))
+r = <f x|cons (f x) (cons (f x) (cons (f x) (cons x nil)))>
 
 -- if we can crack the code to generate fracs as lists, rem should be super easy
 -- rem is:
@@ -89,7 +89,7 @@ r = \f x.cons (f x) (cons (f x) (cons (f x) (cons x nil)))
 -- is greater than three, rotate l = reverse l
 
 
-rotateLeft l = l (\x acc switch. switch (append x (acc false)) (cons x (acc false))) (const nil) true
+rotateLeft l = l <x acc switch|switch (append x (acc false)) (cons x (acc false))> (const nil) true
 -- rotateLeft l = l (\x acc switch. switch append cons x (acc false)) (const nil) true
 
 -- ugly but it will do for now
@@ -107,9 +107,9 @@ rotateRight l = l (\f g h.g (\n.n (\x y.x f (h false x y)) (h false cons (\x.x f
 -- also also the div provided by the other person is faster than the list based variant. i wonder why
 
 
-range n m = m (\t x.cons x (t (suc x))) (\x.nil) n
+range n m = m <t x|cons x (t (suc x))> <x|nil> n
 
-appLast f l = l (\x acc.cons ((isnil acc) (f x) x) acc) nil
+appLast f l = l <x acc|cons ((isnil acc) (f x) x) acc> nil
 
 applyAndRotate f l = rotateRight (appLast f l)
 
@@ -117,10 +117,10 @@ genZeros n = n (cons 0) nil
 
 frac n m = n (applyAndRotate suc) (genZeros m)
 
-firstOr l = l (\a b.a)
+firstOr l = l <a b|a>
 -- ugly but it will do for now
-lastOr l = reverse l (\a b.a)
--- lastOr l z = foldl (\a b.b) z l
+lastOr l = reverse l <a b|a>
+-- lastOr l z = foldl <a b|b> z l
 
 floor r = lastOr r 0
 ceil r = firstOr r 0
@@ -129,7 +129,7 @@ div a b = floor (frac a b)
 
 sum l = l add 0
 
-remPre r = sum (map (\n.minus n (floor r)) r)
+remPre r = sum (map <n|minus n (floor r)> r)
 
 rem n m = remPre (frac n m)
 

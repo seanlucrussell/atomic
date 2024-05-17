@@ -109,7 +109,10 @@ strParser :: Parser Term
 strParser = StringLiteral <$> between (char '"') (char '"') (many (noneOf "\""))
 
 lambdaParser :: Parser Term
-lambdaParser = (strSymbol "\\" <|> strSymbol "λ") *> liftA2 manyLambdas (sepEndBy1 name lineSpacing) (strSymbol "." *> termParser)
+lambdaParser = try altLambdaParser <|> try ((strSymbol "\\" <|> strSymbol "λ") *> liftA2 manyLambdas (sepEndBy1 name lineSpacing) (strSymbol "." *> termParser))
+
+altLambdaParser :: Parser Term
+altLambdaParser = (strSymbol "<" <|> strSymbol "λ") *> liftA2 manyLambdas (sepEndBy1 name lineSpacing) (strSymbol "|" *> termParser <* strSymbol ">")
 
 manyLambdas :: [Name] -> Term -> Term
 manyLambdas s t = foldr Lambda t s

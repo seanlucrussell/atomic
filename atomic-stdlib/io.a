@@ -7,7 +7,7 @@ newline = 10
 
 putStrLn l cont = l PUTCHAR (PUTCHAR newline cont)
 
-getStrLnNonRec rec s cont  = GETCHAR \c.if (equal c newline) (cont s) (rec (append c s) cont)
+getStrLnNonRec rec s cont  = GETCHAR <c|if (equal c newline) (cont s) (rec (append c s) cont)>
 getStrLn = y getStrLnNonRec ""
 
 reveal {putStrLn, getStrLn}

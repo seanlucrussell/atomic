@@ -10,24 +10,24 @@ suc n f x = f (n f x)
 add m n f x = m f (n f x)
 multiply m n f x = m (n f) x
 exp m n = n m
-pred n f x = n (\g h.h (g f)) (\u.x) (\u.u)
+pred n f x = n <g h|h (g f)> <u|x> <u|u>
 minus m n = (n pred) m
 
-iszero n = n (\x.false) true
+iszero n = n <x|false> true
 
 -- see https://gist.github.com/viclib/cd96edb1a8517480b5d7 for explanation
 -- of division system
-repeat n x f = n (λt.t x) f
+repeat n x f = n <t|t x> f
 lastOf n = n true id id
 
 floor m frac f x = repeat m x (frac f (lastOf m))
-frac n m f = n (m (λt nt v.t (λa.nt a v)) id (λa b.b (f a)))
+frac n m f = n (m <t nt v|t <a|nt a v>> id <a b|b (f a)>)
 
 divide n m = floor m (frac n m)
 
 lessthanorequal m n = iszero (minus m n)
 
-rem = y (\f n d.(lessthanorequal d n) (\x.f(minus n d) d x) n)
+rem = y <f n d|(lessthanorequal d n) <x|f(minus n d) d x> n>
 
 equal m n = and (lessthanorequal m n) (lessthanorequal n m)
 

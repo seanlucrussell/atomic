@@ -2,6 +2,6 @@ id x = x
 compose f g x = f (g x)
 const a b = a
 flip f x y = f y x
-y f = (\x.f (x x)) (\x.f (x x))
+y f = <x|f (x x)> <x|f (x x)>
 
 reveal {id,compose,const,flip,y}

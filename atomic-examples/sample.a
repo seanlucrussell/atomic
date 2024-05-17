@@ -7,6 +7,6 @@ use reverse from list
 
 reveal
   putStrLn "Reverse this string:"
- (getStrLn (\s.
+ (getStrLn (<s|
   putStrLn (reverse s)
-  EXIT))
+  EXIT)>)
