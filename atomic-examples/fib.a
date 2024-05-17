@@ -8,7 +8,7 @@ use if from bool
 
 recursive = combinators.y
 
-range n m = m <t x|cons x (t (suc x))> (\x.nil) n
+range n m = m <t x|cons x (t (suc x))> <x|nil> n
 
 asciiDigitOffset = '0'
 
